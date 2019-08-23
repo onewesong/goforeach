@@ -26,6 +26,7 @@ func run(cmd string, ch chan bool) {
 	res, err := exec.Command(args[0], args[1:]...).Output()
 	if err != nil {
 		fmt.Println(err.Error())
+		<-ch
 		return
 	}
 	fmt.Print(string(res))
