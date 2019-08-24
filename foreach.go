@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/akamensky/argparse"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var wg sync.WaitGroup
@@ -33,18 +33,19 @@ func run(cmd string, ch chan bool) {
 	<-ch
 }
 
-func main() {
-	parser := argparse.NewParser("foreach", "run the command which you want by goroutine")
-	rawCmd := parser.String("e", "execute", &argparse.Options{Required: true, Help: "the command to be executed"})
-	cpuNum := parser.Int("n", "cpu_num", &argparse.Options{Required: false, Default: 2, Help: "sets the maximum number of CPUs that can be executing simultaneously"})
-	fork := parser.Int("f", "fork", &argparse.Options{Required: false, Default: 10, Help: "specify the number of concurrent goroutine"})
-	show := parser.Flag("s", "show", &argparse.Options{Required: false, Default: false, Help: "show infos of localhost"})
+var (
+	app = kingpin.New("foreach", "run the command which you want by goroutine.")
 
-	err := parser.Parse(os.Args)
-	if err != nil {
-		fmt.Print(parser.Usage(err))
-		os.Exit(1)
-	}
+	rawCmd = app.Arg("execute", "the command to be executed").Required().String()
+	cpuNum = app.Flag("cpu_num", "sets the maximum number of CPUs that can be executing simultaneously").Short('n').Default("2").Int()
+	fork   = app.Flag("fork", "specify the number of concurrent goroutine").Short('f').Default("10").Int()
+	show   = app.Flag("show", "show infos of localhost").Short('s').Bool()
+)
+
+func main() {
+	app.Version("0.0.2")
+	app.HelpFlag.Short('h')
+	app.Parse(os.Args[1:])
 
 	logicCPUNum := runtime.NumCPU()
 	if *show == true {
