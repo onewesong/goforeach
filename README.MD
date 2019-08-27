@@ -1,6 +1,7 @@
 # 依赖安装
 ```
 go get -u -v gopkg.in/alecthomas/kingpin.v2
+go get -u -v golang.org/x/crypto/ssh/terminal
 ```
 # 使用
 1. 直接运行

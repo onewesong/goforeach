@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/crypto/ssh/terminal"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -50,8 +51,12 @@ func replaceCmd(cmd string, input string) string {
 	return cmd
 }
 
+func isTerminal() bool {
+	return terminal.IsTerminal(int(os.Stdin.Fd()))
+}
+
 func main() {
-	app.Version("0.0.4")
+	app.Version("0.0.5")
 	app.HelpFlag.Short('h')
 	app.Parse(os.Args[1:])
 
@@ -71,20 +76,25 @@ func main() {
 
 	ch := make(chan bool, *fork)
 
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		input, err := reader.ReadString('\n')
-		if err != nil && err == io.EOF {
-			break
-		}
+	if isTerminal() {
 		for i := 0; i < *circle; i++ {
-			cmd := replaceCmd(*rawCmd, input)
 			wg.Add(1)
-			go run(cmd, ch)
+			go run(*rawCmd, ch)
+		}
+	} else {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			input, err := reader.ReadString('\n')
+			if err != nil && err == io.EOF {
+				break
+			}
+			for i := 0; i < *circle; i++ {
+				cmd := replaceCmd(*rawCmd, input)
+				wg.Add(1)
+				go run(cmd, ch)
+			}
 		}
 	}
-
 	wg.Wait()
 	close(ch)
 }
