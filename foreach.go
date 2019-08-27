@@ -1,4 +1,3 @@
-// version: 0.0.1
 // author: wws
 // Created Time: 2019-08-22
 package main
@@ -13,10 +12,19 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/alecthomas/kingpin.v2"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var wg sync.WaitGroup
+var (
+	wg  sync.WaitGroup
+	app = kingpin.New("foreach", "run the command which you want by goroutine.")
+
+	rawCmd = app.Arg("execute", "The command to be executed").Required().String()
+	circle = app.Flag("circle", "The circle times of command run").Short('c').Default("1").Int()
+	cpuNum = app.Flag("cpu_num", "Sets the maximum number of CPUs that can be executing simultaneously").Short('n').Default("2").Int()
+	fork   = app.Flag("fork", "Specify the number of concurrent goroutine").Short('f').Default("10").Int()
+	show   = app.Flag("show", "Show infos of localhost").Short('s').Bool()
+)
 
 func run(cmd string, ch chan bool) {
 	defer wg.Done()
@@ -33,17 +41,8 @@ func run(cmd string, ch chan bool) {
 	<-ch
 }
 
-var (
-	app = kingpin.New("foreach", "run the command which you want by goroutine.")
-
-	rawCmd = app.Arg("execute", "the command to be executed").Required().String()
-	cpuNum = app.Flag("cpu_num", "sets the maximum number of CPUs that can be executing simultaneously").Short('n').Default("2").Int()
-	fork   = app.Flag("fork", "specify the number of concurrent goroutine").Short('f').Default("10").Int()
-	show   = app.Flag("show", "show infos of localhost").Short('s').Bool()
-)
-
 func main() {
-	app.Version("0.0.2")
+	app.Version("0.0.3")
 	app.HelpFlag.Short('h')
 	app.Parse(os.Args[1:])
 
@@ -70,9 +69,11 @@ func main() {
 		if err != nil && err == io.EOF {
 			break
 		}
-		cmd := strings.Replace(*rawCmd, "#1", input, -1)
-		wg.Add(1)
-		go run(cmd, ch)
+		for i := 0; i < *circle; i++ {
+			cmd := strings.Replace(*rawCmd, "#1", input, -1)
+			wg.Add(1)
+			go run(cmd, ch)
+		}
 	}
 
 	wg.Wait()
