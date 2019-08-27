@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -41,8 +42,17 @@ func run(cmd string, ch chan bool) {
 	<-ch
 }
 
+func replaceCmd(cmd string, input string) string {
+	count := 0
+	for _, i := range strings.Fields(input) {
+		count++
+		cmd = strings.Replace(cmd, "#"+strconv.Itoa(count), i, -1)
+	}
+	return cmd
+}
+
 func main() {
-	app.Version("0.0.3")
+	app.Version("0.0.4")
 	app.HelpFlag.Short('h')
 	app.Parse(os.Args[1:])
 
@@ -70,7 +80,7 @@ func main() {
 			break
 		}
 		for i := 0; i < *circle; i++ {
-			cmd := strings.Replace(*rawCmd, "#1", input, -1)
+			cmd := replaceCmd(*rawCmd, input)
 			wg.Add(1)
 			go run(cmd, ch)
 		}
