@@ -31,8 +31,7 @@ func run(cmd string, ch chan bool) {
 	defer wg.Done()
 
 	ch <- true
-	args := strings.Fields(cmd)
-	res, err := exec.Command(args[0], args[1:]...).Output()
+	res, err := exec.Command("/bin/bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Println(err.Error())
 		<-ch
