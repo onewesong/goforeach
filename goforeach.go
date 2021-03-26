@@ -32,7 +32,12 @@ func run(cmd string, ch chan bool) {
 	defer wg.Done()
 
 	ch <- true
-	res, _ := exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
+	res, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		fmt.Println(err.Error())
+		<-ch
+		return
+	}
 	fmt.Print(string(res))
 	<-ch
 }
@@ -51,7 +56,7 @@ func isTerminal() bool {
 }
 
 func main() {
-	app.Version("0.0.6")
+	app.Version("0.0.7")
 	app.HelpFlag.Short('h')
 	app.Parse(os.Args[1:])
 
